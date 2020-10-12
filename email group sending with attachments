@@ -1,0 +1,64 @@
+Sub monthly_brief()
+Dim outlookApp As Outlook.Application
+Dim myMail As Outlook.MailItem
+Dim sh As Worksheet
+Dim cell, Filecell, rng As Range
+Dim source_file, to_emails, cc_emails As String
+Dim i, j As Integer
+Dim xOutMsg As String
+
+With Application
+    .EnableEvents = False
+    .ScreenUpdating = False
+End With
+
+Set sh = Sheets("sheet1")
+
+Set outlookApp = New Outlook.Application
+
+strbody = "<html> <body><p style ='font-family:calibri;font-size:15'>Dear all,<br><br>"
+strbody = strbody & "正文"<br>
+strbody = strbody & "</body> </html>" '这里使用html格式编辑正文，可以根据需要调整字体，大小颜色等
+
+
+
+For Each cell In sh.Columns("A").Cells.SpecialCells(xlCellTypeConstants)
+    Set rng = sh.Cells(cell.Row, 1).Range("E1:M1")
+    
+    If cell.Value Like "?*@?*.?*" And _
+    Application.WorksheetFunction.CountA(rng) > 0 Then
+        Set myMail = outlookApp.CreateItem(0)
+        
+        With myMail
+            .Display '此处Display是为了添加default Outlook签名
+            .To = sh.Cells(cell.Row, 1).Value
+            .CC = sh.Cells(cell.Row, 2).Value
+            .Subject = sh.Cells(cell.Row, 3).Value
+            Signature = .HTMLBody
+            .HTMLBody = strbody & "<p><BR/><BR/></p>" & Signature
+            
+            '添加附件
+            For Each Filecell In rng.SpecialCells(xlCellTypeConstants)
+                
+                If Trim(Filecell.Value) <> "" Then
+                    If Dir(Filecell.Value) <> "" Then
+                        .Attachments.Add Filecell.Value
+                    End If
+                End If
+            Next Filecell
+            '.send 正式发送可以将 ' 去掉
+            .Display '预览效果
+        End With
+        
+        Set myMail = Nothing
+    End If
+Next cell
+
+Set outlookApp = Nothing
+
+With Application
+    .EnableEvents = True
+    .ScreenUpdating = True
+End With
+
+End Sub
